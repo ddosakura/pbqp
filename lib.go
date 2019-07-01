@@ -4,15 +4,11 @@ import (
 	"io"
 	"net"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/xtaci/smux"
 )
 
 // Builder func of smux
 type Builder func(conn io.ReadWriteCloser, config *smux.Config) (*smux.Session, error)
-
-// Generator of protobuf
-type Generator func() proto.Message
 
 // T Tunnel
 type T struct {
@@ -40,11 +36,15 @@ func Client(conn net.Conn) (*T, error) {
 }
 
 // Accept other-side
-func (t *T) Accept(gen Generator) *Chain {
+func (t *T) Accept() *Chain {
 	s, err := t.sess.AcceptStream()
+	err = RootErr(err)
 	if err != nil {
+		if err == io.EOF {
+			err = ErrIsClosed
+		}
 		return &Chain{
-			err: RootErr(err),
+			err: err,
 		}
 	}
 
@@ -56,11 +56,11 @@ func (t *T) Accept(gen Generator) *Chain {
 	// 	}
 	// }()
 
-	return &Chain{stream: s, gen: gen}
+	return &Chain{stream: s}
 }
 
-// Send to other-side
-func (t *T) Send(gen Generator) *Chain {
+// Open other-side
+func (t *T) Open() *Chain {
 	if t.sess.IsClosed() {
 		return &Chain{
 			err: ErrIsClosed,
@@ -81,5 +81,5 @@ func (t *T) Send(gen Generator) *Chain {
 	// 	}
 	// }()
 
-	return &Chain{stream: s, gen: gen}
+	return &Chain{stream: s}
 }

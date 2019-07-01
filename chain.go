@@ -8,12 +8,12 @@ import (
 )
 
 // Handler of Chain
-type Handler func(req proto.Message, conn net.Conn) (res proto.Message, waitReq bool, e error)
+//   func(readbuf, conn) (writebuf, next_readbuf, err)
+type Handler func(proto.Message, net.Conn) (proto.Message, proto.Message, error)
 
 // Chain for SMUX Action
 type Chain struct {
 	stream *smux.Stream
-	gen    Generator
 
 	pb  proto.Message
 	err error
@@ -22,7 +22,7 @@ type Chain struct {
 // Then Action
 func (c *Chain) Then(fn Handler) *Chain {
 	if c.err == nil {
-		pb, w, err := fn(c.pb, c.stream)
+		pb, next, err := fn(c.pb, c.stream)
 		if err != nil {
 			c.err = err
 			return c
@@ -33,14 +33,14 @@ func (c *Chain) Then(fn Handler) *Chain {
 				return c
 			}
 		}
-		if w {
-			c.pb = c.gen()
+		if next == nil {
+			c.pb = nil
+		} else {
+			c.pb = next
 			if err = Read(c.stream, c.pb); err != nil {
 				c.err = err
 				return c
 			}
-		} else {
-			c.pb = nil
 		}
 	}
 	return c
@@ -62,13 +62,15 @@ func (c *Chain) Finally() error {
 // --- Quick Action(s) ---
 
 // ReadOnce Action
-func ReadOnce(req proto.Message, conn net.Conn) (res proto.Message, waitReq bool, e error) {
-	return nil, true, nil
+func ReadOnce(next proto.Message) Handler {
+	return func(proto.Message, net.Conn) (proto.Message, proto.Message, error) {
+		return nil, next, nil
+	}
 }
 
 // WriteOnce Action
-func WriteOnce(pb proto.Message, wait bool) Handler {
-	return func(req proto.Message, conn net.Conn) (proto.Message, bool, error) {
-		return pb, wait, nil
+func WriteOnce(pb proto.Message, next proto.Message) Handler {
+	return func(proto.Message, net.Conn) (proto.Message, proto.Message, error) {
+		return pb, next, nil
 	}
 }

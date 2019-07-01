@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,12 +13,8 @@ import (
 	"github.com/kr/pretty"
 )
 
-func gen() proto.Message {
-	return new(msg.Data)
-}
-
 func main() {
-	conn, err := net.Dial("unix", "../swap.sock")
+	conn, err := net.Dial("unix", os.Args[1])
 	if err != nil {
 		panic(err)
 	}
@@ -31,9 +28,9 @@ func main() {
 			log.Println("Stop Accept")
 		}()
 		for {
-			c := s.Accept(gen)
+			c := s.Accept()
 			if err := c.Test(); err != nil {
-				log.Println(err)
+				log.Println("accept", err)
 				break
 			}
 			go func() {
@@ -43,15 +40,18 @@ func main() {
 						log.Println("(Accept) session closed")
 					}
 				}()
-				if err := c.Then(pbqp.ReadOnce).Then(func(pb proto.Message, conn net.Conn) (proto.Message, bool, error) {
-					println("get pb success")
-					pretty.Println(pb)
-					return nil, false, nil
-				}).Finally(); err != nil {
+				if err := c.
+					Then(pbqp.ReadOnce(new(msg.Data))).
+					Then(func(pb proto.Message, conn net.Conn) (proto.Message, proto.Message, error) {
+						println("get pb success")
+						pretty.Println(pb)
+						return nil, nil, nil
+					}).
+					Finally(); err != nil {
 					if err == pbqp.ErrIsClosed {
 						panic(err)
 					}
-					log.Println(err)
+					log.Println("chain", err)
 				}
 			}()
 		}
@@ -65,11 +65,14 @@ func main() {
 			Ver:     1,
 			Payload: "No. " + strconv.Itoa(i),
 		}
-		if err := s.Send(gen).Then(pbqp.WriteOnce(d, false)).Finally(); err != nil {
+		if err := s.
+			Open().
+			Then(pbqp.WriteOnce(d, nil)).
+			Finally(); err != nil {
 			if err == pbqp.ErrIsClosed {
 				return
 			}
-			log.Println(err)
+			log.Println("o-chain", err)
 		}
 	}
 }

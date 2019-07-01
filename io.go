@@ -12,6 +12,10 @@ import (
 func Read(conn net.Conn, pb proto.Message) error {
 	var buf bytes.Buffer
 	_, err := io.Copy(&buf, conn)
+	err = RootErr(err)
+	if err != nil && err != io.EOF {
+		return err
+	}
 	if err = proto.Unmarshal(buf.Bytes(), pb); err != nil {
 		return err
 	}

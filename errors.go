@@ -14,6 +14,9 @@ var (
 
 // RootErr resolve
 func RootErr(e error) error {
+	if e == nil {
+		return nil
+	}
 	e = errs.Cause(e)
 	err, ok := e.(*net.OpError)
 	if !ok {

@@ -1,14 +1,14 @@
 .PHONY: clean
-clean: proto
+clean:
 	rm ./*.sock
 
 .PHONY: client
 client: proto
-	go run server/main.go
+	go run client/main.go ./swap.sock
 
 .PHONY: server
 server: proto
-	go run server/main.go
+	go run server/main.go ./swap.sock
 
 .PHONY: proto
 proto:
