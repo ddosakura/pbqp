@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package msg;
+
+message Data {
+    int64 ver = 1;
+    string payload = 2;
+}
