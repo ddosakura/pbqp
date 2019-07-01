@@ -1,6 +1,8 @@
 package pbqp
 
 import (
+	"bytes"
+	"io"
 	"net"
 
 	"github.com/golang/protobuf/proto"
@@ -8,13 +10,9 @@ import (
 
 // Read from conn
 func Read(conn net.Conn, pb proto.Message) error {
-	// TODO: get full data
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		return RootErr(err)
-	}
-	if err = proto.Unmarshal(buf[:n], pb); err != nil {
+	var buf bytes.Buffer
+	_, err := io.Copy(&buf, conn)
+	if err = proto.Unmarshal(buf.Bytes(), pb); err != nil {
 		return err
 	}
 	return nil
