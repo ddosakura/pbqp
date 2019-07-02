@@ -84,6 +84,7 @@ func main() {
 				if err := s.
 					Open().
 					Then(pbqp.WriteOnce(d, nil)).
+					Then(pbqp.WriteOnce(d, nil)).
 					Finally(); err != nil {
 					if err == pbqp.ErrIsClosed {
 						panic(err)

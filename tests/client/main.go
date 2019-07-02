@@ -4,7 +4,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/ddosakura/pbqp"
@@ -45,6 +44,11 @@ func main() {
 					Then(func(pb proto.Message, conn net.Conn) (proto.Message, proto.Message, error) {
 						println("get pb success")
 						pretty.Println(pb)
+						return nil, new(msg.Data), nil
+					}).
+					Then(func(pb proto.Message, conn net.Conn) (proto.Message, proto.Message, error) {
+						println("get pb success")
+						pretty.Println(pb)
 						return nil, nil, nil
 					}).
 					Finally(); err != nil {
@@ -63,7 +67,7 @@ func main() {
 		i++
 		d := &msg.Data{
 			Ver:     1,
-			Payload: "No. " + strconv.Itoa(i),
+			Payload: foo(i),
 		}
 		if err := s.
 			Open().
@@ -75,4 +79,12 @@ func main() {
 			log.Println("o-chain", err)
 		}
 	}
+}
+
+func foo(n int) string {
+	s := ""
+	for i := 0; i < n; i++ {
+		s += "="
+	}
+	return s
 }
