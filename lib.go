@@ -35,6 +35,11 @@ func Client(conn net.Conn) (*T, error) {
 	return build(conn, smux.Client)
 }
 
+// Close T
+func (t *T) Close() error {
+	return t.sess.Close()
+}
+
 // Accept other-side
 func (t *T) Accept() *Chain {
 	s, err := t.sess.AcceptStream()
